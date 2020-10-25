@@ -1,8 +1,8 @@
 # TRGN510_final_project
 
-*Title: RNA-seq analysis of smoking and nonsmoking lung cancer patients 
+* Title: RNA-seq analysis of smoking and nonsmoking lung cancer patients 
 
-*Author: Jieting Hu
+* Author: Jieting Hu
 
 # Overview of project:
 
