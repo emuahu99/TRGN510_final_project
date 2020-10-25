@@ -1,8 +1,8 @@
 # TRGN510_final_project
 
-#Title: RNA-seq analysis of smoking and nonsmoking lung cancer patients 
+*Title: RNA-seq analysis of smoking and nonsmoking lung cancer patients 
 
-#Author: Jieting Hu
+*Author: Jieting Hu
 
 # Overview of project:
 
@@ -12,10 +12,10 @@
 
 * References/Links to Vignettes: https://www.bioconductor.org/packages/devel/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html
 
-*git clone https://github.com/emuahu99/TRGN510_final_project.
+* git clone https://github.com/emuahu99/TRGN510_final_project.
 
-*how get the data：from  https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE123352
+* how get the data：from  https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE123352
 
-#Dependencies
+# Dependencies
 
-*Contact email: jietingh@usc.edu
+* Contact email: jietingh@usc.edu
