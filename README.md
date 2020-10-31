@@ -15,6 +15,7 @@
 * git clone https://github.com/emuahu99/TRGN510_final_project.
 
 * how get the data: White Women with Breast Cancer:
+
 15b1a310-59b4-41e8-bbc3-19131f12ee09.htseq.counts.gz
 
 7d7f57fe-a717-4d26-a74b-d050700c57cb.htseq.counts.gz
@@ -30,19 +31,20 @@ b8e564b0-affd-4137-a10c-be4fe254a905.htseq.counts.gz
 74dfc8ec-405b-4ffa-a282-daac57bf4d01.htseq.counts.gz
 
 Asian Women with Breast Cancer: 
-  82bfc74a-cb0f-4966-b53e-c7b535ae7f23.htseq.counts.gz
 
-	c1c1111e-858a-438e-8bb6-90df4defcede.htseq.counts.gz
+82bfc74a-cb0f-4966-b53e-c7b535ae7f23.htseq.counts.gz
 
-	45c4eed7-f80d-4d33-abbb-321ff5ed0750.htseq.counts.gz
+c1c1111e-858a-438e-8bb6-90df4defcede.htseq.counts.gz
 
-	3bb2c361-dc3f-431f-87d1-e2fd1ff4939a.htseq.counts.gz
+45c4eed7-f80d-4d33-abbb-321ff5ed0750.htseq.counts.gz
 
-	0abe1897-c3a9-47e5-8a59-e5a2232b23db.htseq.counts.gz
+3bb2c361-dc3f-431f-87d1-e2fd1ff4939a.htseq.counts.gz
 
-	f966cb98-e661-453d-b1ae-aacf5876520a.htseq.counts.gz
+0abe1897-c3a9-47e5-8a59-e5a2232b23db.htseq.counts.gz
 
-	45c8b091-bc89-4b52-87d9-2d9f97280abe.htseq.counts.gz
+f966cb98-e661-453d-b1ae-aacf5876520a.htseq.counts.gz
+
+45c8b091-bc89-4b52-87d9-2d9f97280abe.htseq.counts.gz
   
   # Dependencies
 
