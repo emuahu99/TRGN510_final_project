@@ -45,6 +45,21 @@ c1c1111e-858a-438e-8bb6-90df4defcede.htseq.counts.gz
 f966cb98-e661-453d-b1ae-aacf5876520a.htseq.counts.gz
 
 45c8b091-bc89-4b52-87d9-2d9f97280abe.htseq.counts.gz
+
+# Milestone 1
+
+* I should successfully select the correct dataset from the TCGA website, load them to R and so the data cleaning process to make it more accessible for limma package analysis. 
+
+# Milestone 2
+
+* I should follow the steps in Vignette and make sdjustment to get meaningful expression analysis.
+
+# Deliverable
+
+* R Markdown
+
+
+
   
   # Dependencies
 
