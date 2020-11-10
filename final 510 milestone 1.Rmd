@@ -5,6 +5,7 @@ date: "11/3/2020"
 output: html_document
 ---
 #TRGN510_final_project:RNA-seq analysis of White and Asian women with breast cancer
+#https://rpubs.com/Emuahu/688917
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
