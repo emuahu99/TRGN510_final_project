@@ -1,0 +1,324 @@
+---
+title: "TRGN510_final_project"
+author: "JietingHu"
+date: "11/3/2020"
+output: html_document
+---
+#TRGN510_final_project:RNA-seq analysis of White and Asian women with breast cancer
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+#setup
+```{r}
+library(limma)
+library(Glimma)
+library(edgeR)
+```
+
+```{r}
+setwd("~/Desktop/final510")
+```
+#data packaging
+```{r}
+#Reading in count-data
+file <- c("2d721010-840f-4ca7-b41c-6792385b410d.htseq.counts",
+          "0a219d18-db73-46e1-a9c9-3565cec06451.htseq.counts",
+          "2edcaaa7-63b4-40b4-abbe-5d7a84012e60.htseq.counts",
+          "7e56863a-53f2-4c94-9cf0-053d72b4d5ee.htseq.counts",
+          "47f0749e-01c7-4d8c-8926-06293c4a9b4e.htseq.counts",
+          "91d53a9c-726f-4611-a284-d2b4d659fdd5.htseq.counts",
+          "95bae25e-21b8-4b27-a2da-f6ab696f674a.htseq.counts",
+          "450cbf36-7dab-46a4-b6b5-d6b99d51083f.htseq.counts",
+          "900a1913-f3b7-46ca-88be-c180a5fb5265.htseq.counts",
+          "30621023-91a3-4b13-bc10-922491b5f9d3.htseq.counts",
+          "95041603-df86-48f7-9ba5-8289883df2d0.htseq.counts",
+          "a1a68fe9-9635-4b7f-b9a2-34474ef8c1dc.htseq.counts",
+          "ab574ed8-1dcc-437e-9471-7caa4b7fc4a6.htseq.counts",
+          "b2a6c9e3-65eb-43bd-849a-5829007379ab.htseq.counts",
+          "b71a52ae-68fb-47c3-89da-24a42e947a8c.htseq.counts",
+          "de2ffea0-e172-45e2-aa15-f543758deb78.htseq.counts",
+          "e9cbd268-573f-41fc-9f17-d25e1d1c9759.htseq.counts",
+          "e4544c39-bf5a-4f95-8853-6a59eae4c262.htseq.counts",
+          "f4bb4f4b-2e42-4098-9edf-042f1fffea0f.htseq.counts",
+          "fb13b1f7-2b62-4cd9-8e01-875acc860016.htseq.counts",
+          "a8a58442-78f5-4876-b25e-c04339eb6f26.htseq.counts",
+          "45c4eed7-f80d-4d33-abbb-321ff5ed0750.htseq.counts",
+          "c14af0e0-81e9-43e7-b08d-b751194e35ef.htseq.counts",
+          "7d83af5d-9bcf-4c82-a993-fa9053a9b3cb.htseq.counts",
+          "2163b681-ae29-4907-8f15-6c3665eae736.htseq.counts",
+          "8a244dd2-0dc1-429c-81a1-5873ce536b47.htseq.counts",
+          "48a95042-0ff3-41a6-a447-dc3a64d087fc.htseq.counts",
+          "c758cf60-68bc-4154-9d43-44339da29889.htseq.counts",
+          "6069387b-32a3-4e1c-8386-050aa2da67c4.htseq.counts",
+          "b44cdb13-1812-4bf6-825e-edae5bc5376a.htseq.counts",
+          "fa3d5856-e25b-4d4e-94ac-f524dc8a4cf5.htseq.counts",
+          "7d229eb4-cdbd-4578-9e54-c7cbd7ef1378.htseq.counts",
+          "d4d6abaa-9134-42ac-9adf-2045f747abb4.htseq.counts",
+          "d229a59b-4f6c-4714-8dd5-1c714a764b22.htseq.counts",
+          "3bb2c361-dc3f-431f-87d1-e2fd1ff4939a.htseq.counts",
+          "a8e5861f-e86c-473d-8ff7-5630532b3c61.htseq.counts",
+          "36d40974-4d4f-4726-b98f-1ceab329d0bf.htseq.counts",
+          "f966cb98-e661-453d-b1ae-aacf5876520a.htseq.counts",
+          "0733fd68-9cd5-440a-a849-fb14ef76c00d.htseq.counts",
+          "2627073d-a532-4d75-9937-0a4f62df51f9.htseq.counts")
+read.delim(file[1], nrow=5)
+x <- readDGE(file)
+class(x)
+dim(x)
+```
+
+#Organising sample information
+```{r}
+samplenames <- substring(colnames(x), 12, nchar(colnames(x)))
+samplenames
+```
+#Annotate the sample
+```{r}
+x$samples
+```
+#Organising gene annotations
+```{r}
+samplenames <- substring(colnames(x), 1, nchar(colnames(x)))
+samplenames
+```
+#Specifying which files are for white(w) or Asian women(a)
+```{r}
+colnames(x) <- samplenames
+group <- c(rep("White",20),rep("Asian",20))
+x$samples$group <- group
+x$samples
+```
+```{r}
+library(Homo.sapiens)
+library(gsubfn)
+```
+
+```{r}
+geneid <- rownames(x)
+geneid <- gsub("\\.[0-9]*$", "", geneid) #remove decimals and numbers after decimals
+genes <- select(Homo.sapiens, keys=geneid, columns=c("SYMBOL", "TXCHROM"), 
+                keytype="ENSEMBL")
+```
+```{r}
+head(genes)
+```
+#remove duplicated genes
+```{r}
+genes <- genes[!duplicated(genes$ENSEMBL),]
+```
+# DGEList-object containing raw count data with associated sample information and gene annotations
+```{r}
+x$genes <- genes
+x
+```
+#data preprocessing
+```{r}
+#Transformations from the raw-scale
+cpm <- cpm(x)
+lcpm <- cpm(x, log=TRUE)
+L <- mean(x$samples$lib.size) * 1e-6
+M <- median(x$samples$lib.size) * 1e-6
+c(L, M)
+```
+```{r}
+summary(lcpm)
+```
+#Removing genes that are lowly expressed
+```{r}
+table(rowSums(x$counts==0)==9)
+```
+#Filter genes and keep approprite ones
+```{r}
+keep.exprs <- filterByExpr(x, group=group)
+x <- x[keep.exprs,, keep.lib.sizes=FALSE]
+dim(x)
+```
+#Plot the density of log-CPM values for raw and filtered data
+```{r}
+lcpm.cutoff <- log2(10/M + 2/L)
+library(RColorBrewer)
+nsamples <- ncol(x)
+col <- brewer.pal(nsamples, "Paired")
+```
+```{r}
+par(mfrow=c(1,2))
+plot(density(lcpm[,1]), col=col[1], lwd=2, ylim=c(0,0.26), las=2, main="", xlab="")
+title(main="A. Raw data", xlab="Log-cpm")
+abline(v=lcpm.cutoff, lty=3)
+for (i in 2:nsamples){
+den <- density(lcpm[,i])
+lines(den$x, den$y, col=col[i], lwd=2)
+}
+legend("topright", samplenames, text.col=col, bty="n")
+lcpm <- cpm(x, log=TRUE)
+plot(density(lcpm[,1]), col=col[1], lwd=2, ylim=c(0,0.26), las=2, main="", xlab="")
+title(main="B. Filtered data", xlab="Log-cpm")
+abline(v=lcpm.cutoff, lty=3)
+for (i in 2:nsamples){
+den <- density(lcpm[,i])
+lines(den$x, den$y, col=col[i], lwd=2)
+}
+legend("topright", samplenames, text.col=col, bty="n")
+```
+#Normalising gene expression distributions
+```{r}
+x <- calcNormFactors(x, method = "TMM")
+x$samples$norm.factors
+```
+#give a better visual representation of the effects of normalisation
+```{r}
+x2 <- x
+x2$samples$norm.factors <- 1
+x2$counts[,1] <- ceiling(x2$counts[,1]*0.05)
+x2$counts[,2] <- x2$counts[,2]*5
+```
+#boxplot
+```{r}
+par(mfrow=c(1,2))
+lcpm <- cpm(x2, log=TRUE)
+boxplot(lcpm, las=2, col=col, main="")
+title(main="A. Example: Unnormalised data",ylab="Log-cpm")
+```
+```{r}
+x2 <- calcNormFactors(x2)  
+x2$samples$norm.factors
+```
+#Boxplot expression for normalised data
+```{r}
+lcpm <- cpm(x2, log=TRUE)
+boxplot(lcpm, las=2, col=col, main="")
+title(main="B. Example: Normalised data",ylab="Log-cpm")
+```
+#Unsupervised clustering of samples using multi-dimensional scaling (MDS) plot
+```{r}
+lcpm <- cpm(x, log=TRUE)
+par(mfrow=c(1,2))
+group
+levels(group) <-  brewer.pal(nlevels(group), "Set1")
+col.group <- as.character(group)
+col.group <- c("purple","orange")[group]
+plotMDS(lcpm, labels=group, col=col.group)
+title(main="A. Sample groups")
+```
+```{r}
+#Glimma plot
+glMDSPlot(lcpm, groups=group)
+```
+
+#Differential expression analysis
+```{r}
+#Creating a design matrix and contrasts
+design <- model.matrix(~0+group)
+colnames(design) <- gsub("group", "", colnames(design))
+design
+```
+#contrast matrix
+```{r}
+contr.matrix <- makeContrasts(
+   WhitevsAsian = White-Asian, 
+   levels = colnames(design))
+contr.matrix
+```
+#Removing heteroscedascity from count data
+```{r}
+par(mfrow=c(1,2))
+v <- voom(x, design, plot=TRUE)
+v
+```
+#Apply voom precision weights to data
+```{r}
+vfit <- lmFit(v, design)
+vfit <- contrasts.fit(vfit, contrasts=contr.matrix)
+efit <- eBayes(vfit)
+plotSA(efit, main="Final model: Mean-variance trend")
+```
+#Examining the number of DE genes
+```{r}
+summary(decideTests(efit))
+```
+```{r}
+#set lfc = 1 and see the result
+tfit <- treat(vfit, lfc=1)
+dt <- decideTests(tfit)
+summary(dt)
+```
+```{r}
+#extract DE genes in multiple comparison
+de.common <- which(dt[,1]!=0)
+length(de.common) 
+```
+```{r}
+head(tfit$genes$SYMBOL[de.common], n=20)
+```
+#Make Venn Diagram
+```{r}
+vennDiagram(dt[,1], circle.col=c("turquoise", "salmon"))
+```
+#extract the result to a file
+```{r}
+write.fit(tfit, dt, file="results.txt")
+```
+#examnine the DE gene
+```{r}
+White.vs.Asian <- topTreat(tfit, coef=1, n=Inf)
+head(White.vs.Asian)
+```
+#Useful graphical representations of differential expression results
+```{r}
+plotMD(tfit, column=1, status=dt[,1], main=colnames(tfit)[1], 
+       xlim=c(-8,13))
+```
+#Make interactive mean-difference plot
+```{r}
+library(Glimma)
+glMDPlot(tfit, coef=1, status=dt, main=colnames(tfit)[1],
+         side.main="ENSEMBL", counts=lcpm, groups=group, launch=TRUE)
+```
+#Heatmap presentation of the DE gene 
+```{r}
+library(gplots)
+```
+```{r}
+library(heatmap.plus)
+White.vs.Asian.topgenes <- White.vs.Asian$ENSEMBL[1:100]
+i <- which(v$genes$ENSEMBL %in% White.vs.Asian.topgenes)
+mycol <- colorpanel(1000,"blue","white","red")
+par(cex.main=0.8,mar=c(1,1,1,1)) 
+heatmap.plus(lcpm[i,], col=bluered(20),cexRow=1,cexCol=0.2, margins = c(10,10), main = "HeatMap") 
+```
+#Gene set testing with camera
+```{r}
+#removing digits after decimal from ENSEMBL and use homo
+rownames2 <- gsub("\\..*","",rownames(v))
+idx <- ids2indices(genes[,1],id=rownames2)
+contr.matrix
+```
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
