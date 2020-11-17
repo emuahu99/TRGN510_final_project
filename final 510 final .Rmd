@@ -1,0 +1,385 @@
+---
+title: "RNA-seq analysis of White and Asian women with breast cancer age over 60 at diagnosis"
+author: "JietingHu"
+date: "11/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+setup
+```{r}
+#load the library needed for DE analysis
+library(limma)
+library(Glimma)
+library(edgeR)
+#I used limma, Glimma, and edgeR (following this vignette: https://bioconductor.org/packages/release/workflows/vignettes/RNAseq123/inst/doc/limmaWorkflow.html)
+```
+
+```{r}
+#set the working directory as the same of the files' location
+setwd("~/Desktop/final510")
+```
+data packaging
+```{r}
+# I downloaded data from NIH GDC Data Portal, with the selection of White and Asian women, age over 60, breast cancer,  RMA seq HT-seq.counts data in TCGA-BRCA project. 
+#Reading in count-data( 20 htseq.counts date files for White women age over 60 at diagnosis with breast cancer, 20 htseq.counts date files for Asian women age over 60 at diagnosis).
+file <- c("2d721010-840f-4ca7-b41c-6792385b410d.htseq.counts",
+          "0a219d18-db73-46e1-a9c9-3565cec06451.htseq.counts",
+          "2edcaaa7-63b4-40b4-abbe-5d7a84012e60.htseq.counts",
+          "7e56863a-53f2-4c94-9cf0-053d72b4d5ee.htseq.counts",
+          "47f0749e-01c7-4d8c-8926-06293c4a9b4e.htseq.counts",
+          "91d53a9c-726f-4611-a284-d2b4d659fdd5.htseq.counts",
+          "95bae25e-21b8-4b27-a2da-f6ab696f674a.htseq.counts",
+          "450cbf36-7dab-46a4-b6b5-d6b99d51083f.htseq.counts",
+          "900a1913-f3b7-46ca-88be-c180a5fb5265.htseq.counts",
+          "30621023-91a3-4b13-bc10-922491b5f9d3.htseq.counts",
+          "95041603-df86-48f7-9ba5-8289883df2d0.htseq.counts",
+          "a1a68fe9-9635-4b7f-b9a2-34474ef8c1dc.htseq.counts",
+          "ab574ed8-1dcc-437e-9471-7caa4b7fc4a6.htseq.counts",
+          "b2a6c9e3-65eb-43bd-849a-5829007379ab.htseq.counts",
+          "b71a52ae-68fb-47c3-89da-24a42e947a8c.htseq.counts",
+          "de2ffea0-e172-45e2-aa15-f543758deb78.htseq.counts",
+          "e9cbd268-573f-41fc-9f17-d25e1d1c9759.htseq.counts",
+          "e4544c39-bf5a-4f95-8853-6a59eae4c262.htseq.counts",
+          "f4bb4f4b-2e42-4098-9edf-042f1fffea0f.htseq.counts",
+          "fb13b1f7-2b62-4cd9-8e01-875acc860016.htseq.counts",
+          "a8a58442-78f5-4876-b25e-c04339eb6f26.htseq.counts",
+          "45c4eed7-f80d-4d33-abbb-321ff5ed0750.htseq.counts",
+          "c14af0e0-81e9-43e7-b08d-b751194e35ef.htseq.counts",
+          "7d83af5d-9bcf-4c82-a993-fa9053a9b3cb.htseq.counts",
+          "2163b681-ae29-4907-8f15-6c3665eae736.htseq.counts",
+          "8a244dd2-0dc1-429c-81a1-5873ce536b47.htseq.counts",
+          "48a95042-0ff3-41a6-a447-dc3a64d087fc.htseq.counts",
+          "c758cf60-68bc-4154-9d43-44339da29889.htseq.counts",
+          "6069387b-32a3-4e1c-8386-050aa2da67c4.htseq.counts",
+          "b44cdb13-1812-4bf6-825e-edae5bc5376a.htseq.counts",
+          "fa3d5856-e25b-4d4e-94ac-f524dc8a4cf5.htseq.counts",
+          "7d229eb4-cdbd-4578-9e54-c7cbd7ef1378.htseq.counts",
+          "d4d6abaa-9134-42ac-9adf-2045f747abb4.htseq.counts",
+          "d229a59b-4f6c-4714-8dd5-1c714a764b22.htseq.counts",
+          "3bb2c361-dc3f-431f-87d1-e2fd1ff4939a.htseq.counts",
+          "a8e5861f-e86c-473d-8ff7-5630532b3c61.htseq.counts",
+          "36d40974-4d4f-4726-b98f-1ceab329d0bf.htseq.counts",
+          "f966cb98-e661-453d-b1ae-aacf5876520a.htseq.counts",
+          "0733fd68-9cd5-440a-a849-fb14ef76c00d.htseq.counts",
+          "2627073d-a532-4d75-9937-0a4f62df51f9.htseq.counts")
+read.delim(file[1], nrow=5)
+x <- readDGE(file)
+class(x) #this would give class of the dataframe
+dim(x) #this would give dimension of the dataframe
+# The readDGE function in edgeR make it possible for you to effectively read all files and combined them into a matrix of counts for DE analysis. 
+```
+Organising sample information
+```{r}
+#I need to list the data and sort it, which I know the order the first 20 is for White and next 20 for Asian women. 
+samplenames <- substring(colnames(x), 12, nchar(colnames(x)))
+samplenames
+```
+Annotate the sample
+```{r}
+x$samples
+```
+Organising gene annotations
+```{r}
+samplenames <- substring(colnames(x), 1, nchar(colnames(x)))
+samplenames
+```
+Specifying which files are for white(w) or Asian women(a)
+```{r}
+# Here I specified that the groups corresponding to White and Asian Women in a column.
+colnames(x) <- samplenames
+group <- c(rep("White",20),rep("Asian",20))
+x$samples$group <- group
+x$samples
+```
+load library for human
+```{r}
+# The analysis is for human so change the library as to human. 
+library(Homo.sapiens)
+library(gsubfn)
+```
+
+```{r}
+# It has been noticed that ENSEMBL gene names with decimal are not recognized, so it is removed. 
+geneid <- rownames(x)
+geneid <- gsub("\\.[0-9]*$", "", geneid) #remove decimals and numbers after decimals
+genes <- select(Homo.sapiens, keys=geneid, columns=c("SYMBOL", "TXCHROM"), 
+                keytype="ENSEMBL")
+```
+```{r}
+# This will return the first few rows of genes with ENSEMBL names, SYMBOL and TXCHROM.
+head(genes)
+```
+remove duplicated genes
+```{r}
+genes <- genes[!duplicated(genes$ENSEMBL),]
+```
+ DGEList-object containing raw count data with associated sample information and gene annotations
+```{r}
+x$genes <- genes
+x
+## This will give you gene annotations + raw count data + sample information.
+```
+data preprocessing
+```{r}
+#Transformations from the raw-scale
+# This way the raw counts are converted to CPM (counts per million) and LCPM (log-CPM) values using the cpm function in edgeR
+cpm <- cpm(x)
+lcpm <- cpm(x, log=TRUE)
+L <- mean(x$samples$lib.size) * 1e-6
+M <- median(x$samples$lib.size) * 1e-6
+c(L, M)
+```
+```{r}
+summary(lcpm)
+# this gives a summary table of all the data including  Min.,Mean, Max and so on. 
+```
+Removing genes that are lowly expressed
+```{r}
+table(rowSums(x$counts==0)==9)
+```
+Filter genes and keep approprite ones
+```{r}
+#This step I try to calculate the significance threshold for read counts and to use that threshold to filter the data.
+keep.exprs <- filterByExpr(x, group=group)
+x <- x[keep.exprs,, keep.lib.sizes=FALSE]
+dim(x)
+```
+Plot the density of log-CPM values for raw and filtered data
+```{r}
+# this step is to plot raw vs. filtered data
+lcpm.cutoff <- log2(10/M + 2/L)
+library(RColorBrewer)
+nsamples <- ncol(x)
+col <- brewer.pal(nsamples, "Paired")
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(density(lcpm[,1]), col=col[1], lwd=2, ylim=c(0,0.26), las=2, main="", xlab="")
+title(main="A. Raw data", xlab="Log-cpm")
+abline(v=lcpm.cutoff, lty=3)
+for (i in 2:nsamples){
+den <- density(lcpm[,i])
+lines(den$x, den$y, col=col[i], lwd=2)
+}
+legend("topright", samplenames, text.col=col, bty="n")
+lcpm <- cpm(x, log=TRUE)
+plot(density(lcpm[,1]), col=col[1], lwd=2, ylim=c(0,0.26), las=2, main="", xlab="")
+title(main="B. Filtered data", xlab="Log-cpm")
+abline(v=lcpm.cutoff, lty=3)
+for (i in 2:nsamples){
+den <- density(lcpm[,i])
+lines(den$x, den$y, col=col[i], lwd=2)
+}
+legend("topright", samplenames, text.col=col, bty="n")
+```
+this above two Figures are density of log-CPM values for raw pre-filtered data A and post-filtered data B. The dotted black verticle line is log-CPM threshold. The trendlines all overlap in B and the overall shape of the filtered data is bimodal. We care mostly about the right peak of log-cpm = 5. 
+
+Normalising gene expression distributions
+```{r}
+#This is the trimmed mean of M-values” (TMM) method of normalization (Robinson and Oshlack 2010) using the calcNormFactors function in edgeR
+x <- calcNormFactors(x, method = "TMM")
+x$samples$norm.factors
+```
+give a better visual representation of the effects of normalisation
+```{r}
+#duplicating the data, then adjusting it so that the counts of the first sample are reduced to 5% of their original values, while the counts of the second sample are inflated to be 5-times larger 
+x2 <- x
+x2$samples$norm.factors <- 1
+x2$counts[,1] <- ceiling(x2$counts[,1]*0.05)
+x2$counts[,2] <- x2$counts[,2]*5
+```
+boxplot presentation
+```{r}
+par(mfrow=c(1,2))
+lcpm <- cpm(x2, log=TRUE)
+boxplot(lcpm, las=2, col=col, main="")
+title(main="A. Example: Unnormalised data",ylab="Log-cpm")
+```
+The figure above depicts the boxplot of log-CPM value for unnormalized data. Data in 410d.htseq and d5ee.htseq have a significantly different data distribution than the other data sets. The is due to the vignette has scaled the first and second samples to 5% and 500% of their original values, respectively.
+```{r}
+x2 <- calcNormFactors(x2)  
+x2$samples$norm.factors
+```
+Boxplot expression for normalised data
+```{r}
+lcpm <- cpm(x2, log=TRUE)
+boxplot(lcpm, las=2, col=col, main="")
+title(main="B. Example: Normalised data",ylab="Log-cpm")
+```
+The figure above depicts the boxplot of log-CPM value for unnormalized data.
+
+Unsupervised clustering of samples using multi-dimensional scaling (MDS) plot
+```{r}
+lcpm <- cpm(x, log=TRUE)
+par(mfrow=c(1,2))
+group
+levels(group) <-  brewer.pal(nlevels(group), "Set1")
+col.group <- as.character(group)
+col.group <- c("purple","orange")[group]
+plotMDS(lcpm, labels=group, col=col.group)
+title(main="A. Sample groups")
+```
+This is a plotof log-CPM values over dimensions 1  with samples colored and labeled by sample groups = race/ethnicity. Distances on the plot correspond to the leading fold-change, which is the average (root-mean-square) log2-fold-change for thegenes most divergent between each pair of samples. I don't think I see a forming any discrete clusters. If I did see samples clustering by a given factor in any of the dimensions, it would suggest that the factor contributes to expression differences
+```{r}
+#Glimma plot
+glMDSPlot(lcpm, groups=group)
+```
+
+Differential expression analysis
+```{r}
+#Creating a design matrix and contrasts
+design <- model.matrix(~0+group)
+colnames(design) <- gsub("group", "", colnames(design))
+design
+```
+contrast matrix
+```{r}
+contr.matrix <- makeContrasts(
+   WhitevsAsian = White-Asian, 
+   levels = colnames(design))
+contr.matrix
+```
+Removing heteroscedascity from count data
+```{r}
+par(mfrow=c(1,2))
+v <- voom(x, design, plot=TRUE)
+v
+```
+The above figure is the result of voom function extracts residual variances from fitting linear models to log-CPM transformed data. Means on the x-axis and variances on the y-axis of each genes are plotted to show the dependence between the two before the voom function is applied to the data. 
+
+Apply voom precision weights to data
+```{r}
+vfit <- lmFit(v, design)
+vfit <- contrasts.fit(vfit, contrasts=contr.matrix)
+efit <- eBayes(vfit)
+plotSA(efit, main="Final model: Mean-variance trend")
+```
+This above figure is the final model of mean and variance trend with average log-expression on the x-axis and sqrt(sigma) on the y-axis. 
+
+Examining the number of DE genes
+```{r}
+summary(decideTests(efit))
+```
+
+```{r}
+#set lfc = 0.5 and see the result
+#use the treat method (McCarthy and Smyth 2009) can be used to calculate p-values from empirical Bayes moderated t-statistics with a minimum log-FC requirement
+tfit <- treat(vfit, lfc=0.5)
+dt <- decideTests(tfit)
+summary(dt)
+```
+```{r}
+#extract DE genes in multiple comparison
+de.common <- which(dt[,1]!=0)
+length(de.common) 
+```
+```{r}
+head(tfit$genes$SYMBOL[de.common], n=20)
+```
+Make Venn Diagram
+```{r}
+vennDiagram(dt[,1], circle.col=c("turquoise", "salmon"))
+```
+This Venn diagram shows 8 DE genes in White vs. Asian women genes.
+
+extract the result to a file
+```{r}
+write.fit(tfit, dt, file="results.txt")
+```
+examnine the DE gene
+```{r}
+#topTreat function to lists top DE genes
+White.vs.Asian <- topTreat(tfit, coef=1, n=Inf)
+head(White.vs.Asian)
+```
+Useful graphical representations of differential expression results
+```{r}
+# make a mean-difference (MD) plot
+plotMD(tfit, column=1, status=dt[,1], main=colnames(tfit)[1], 
+       xlim=c(-8,13))
+```
+This is a MD plot displays log-FCs from the linear model fit against average log-CPM values. The DE genes are highlighted in red for upregulation and blue for downregulation. 
+
+Make interactive mean-difference plot
+```{r}
+library(Glimma)
+glMDPlot(tfit, coef=1, status=dt, main=colnames(tfit)[1],
+         side.main="ENSEMBL", counts=lcpm, groups=group, launch=TRUE)
+```
+Heatmap presentation of the DE gene 
+```{r}
+library(gplots)
+```
+```{r}
+library(heatmap.plus)
+White.vs.Asian.topgenes <- White.vs.Asian$ENSEMBL[1:100]
+i <- which(v$genes$ENSEMBL %in% White.vs.Asian.topgenes)
+mycol <- colorpanel(1000,"blue","white","red")
+par(cex.main=0.8,mar=c(1,1,1,1)) 
+heatmap.plus(lcpm[i,], col=bluered(20),cexRow=1,cexCol=0.2, margins = c(10,10), main = "HeatMap") 
+```
+This is a heatmap showing log-CPM values for the top DE genes. Expression across each gene,  has been scaled so that mean expression = 0 and standard deviation = 1. 
+Samples with relatively high expression of a given gene are marked in RED and samples with relatively low expression are marked in BLUE. 
+Lighter shades and white represent genes with intermediate expression levels. Samples and genes have been reordered by the hierarchical clustering method. A dendrogram is shown for the sample clustering. 
+
+Gene set testing with camera
+```{r}
+#removing digits after decimal from ENSEMBL and use homo
+rownames2 <- gsub("\\..*","",rownames(v))
+idx <- ids2indices(genes[,1],id=rownames2)
+contr.matrix
+```
+```{r}
+#downloaded the human C2 curated gene set here: http://bioinf.wehi.edu.au/software/MSigDB/. 
+load('~/Desktop/final510/human_c2_v5p2.rdata')
+```
+
+```{r}
+idx <- ids2indices(Hs.c2,id=rownames(v$genes))
+cam.RaceVS <- camera(v,idx,design,contrast=contr.matrix[,1])
+head(cam.RaceVS,60)
+```
+```{r}
+#The camara method may not apply becasue there are no sigdificant DE genes.
+cam.WhitevsAsian <- camera(v,idx,design,contrast=contr.matrix[,1])
+head(cam.WhitevsAsian,5)
+```
+```{r}
+idx$WhitevsAsian_UP
+```
+```{r}
+idx$WhitevsAsian_DN
+```
+#known issue
+At this point we are not seeing DE genes, so we can't get the barcodeplot. 
+
+# Thank you so much Dr. Craig! It has been a challenging and amazing journey for me. I know nothing before, but now I realize the doundation of bioinformatics!  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
